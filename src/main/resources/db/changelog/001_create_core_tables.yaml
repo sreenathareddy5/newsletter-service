@@ -1,0 +1,52 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20241106-01
+      author: acme_user
+      comment: Create Subscriber, Topic, Content, and Subscription tables with relationships
+      changes:
+        # 1. SUBSCRIBER TABLE - Stores user email and active status
+        - createTable:
+            tableName: subscriber
+            columns:
+              - column: {name: id, type: BIGSERIAL, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: email, type: VARCHAR(255), constraints: {nullable: false, unique: true}}
+              - column: {name: is_active, type: BOOLEAN, defaultValueBoolean: true, constraints: {nullable: false}}
+              - column: {name: subscription_date, type: TIMESTAMP WITHOUT TIME ZONE, defaultValueComputed: 'NOW()'}
+
+        # 2. TOPIC TABLE - Defines categories and the daily time for sending
+        - createTable:
+            tableName: topic
+            columns:
+              - column: {name: id, type: BIGSERIAL, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: name, type: VARCHAR(50), constraints: {nullable: false, unique: true}}
+              - column: {name: send_time, type: VARCHAR(5), constraints: {nullable: false}} # Stores time as HH:MM (e.g., "09:00")
+
+        # 3. CONTENT TABLE - Stores the actual newsletter body
+        - createTable:
+            tableName: content
+            columns:
+              - column: {name: id, type: BIGSERIAL, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: topic_id, type: BIGINT, constraints: {nullable: false, foreignKeyName: fk_content_topic_id, references: topic(id)}}
+              - column: {name: subject, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: body, type: TEXT, constraints: {nullable: false}}
+              - column: {name: scheduled_for_date, type: DATE, constraints: {nullable: false}}
+              - column: {name: is_sent, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+
+        # Ensures that a topic only has one piece of content scheduled per day
+        - addUniqueConstraint:
+            columnNames: topic_id, scheduled_for_date
+            tableName: content
+            constraintName: uk_content_topic_date
+
+        # 4. SUBSCRIPTION JOIN TABLE - Links Subscribers to Topics
+        - createTable:
+            tableName: subscription
+            columns:
+              - column: {name: subscriber_id, type: BIGINT, constraints: {nullable: false, foreignKeyName: fk_sub_subscriber_id, references: subscriber(id)}}
+              - column: {name: topic_id, type: BIGINT, constraints: {nullable: false, foreignKeyName: fk_sub_topic_id, references: topic(id)}}
+
+        # Define a composite primary key (Subscriber ID + Topic ID)
+        - addPrimaryKey:
+            columnNames: subscriber_id, topic_id
+            tableName: subscription
+            constraintName: pk_subscription
