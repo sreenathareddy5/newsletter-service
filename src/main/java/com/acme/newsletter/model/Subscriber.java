@@ -1,32 +1,30 @@
 package com.acme.newsletter.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-
-import java.time.LocalDateTime;
+import lombok.*;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "subscriber")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@RequiredArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Subscriber {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    private UUID id;
 
-    @NonNull
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @NonNull
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
-
-    @Column(name = "subscription_date", nullable = false)
-    private LocalDateTime subscriptionDate = LocalDateTime.now();
+    private boolean active = true;
+    @Column(name = "subscribed_at", nullable = false)
+    private OffsetDateTime subscribedAt;
+    @PrePersist
+    public void prePersist() {
+        subscribedAt = OffsetDateTime.now();
+    }
 }

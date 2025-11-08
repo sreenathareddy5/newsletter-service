@@ -1,31 +1,57 @@
 package com.acme.newsletter.controller;
 
+import com.acme.newsletter.model.dto.CreateSubscriberRequest;
+import com.acme.newsletter.model.dto.SubscriberResponse;
+import com.acme.newsletter.service.SubscriberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.HttpStatus;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+import java.util.List;
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/subscribers")
-@Tag(name = "Subscriber Management", description = "API for entering and managing user email IDs and profiles.")
+@RequiredArgsConstructor
+@Tag(name = "Subscribers", description = "Manage subscribers and topic subscriptions")
 public class SubscriberController {
 
-    @Operation(summary = "Create a new Subscriber", description = "Registers a new user (email signup) to the system.")
+    private final SubscriberService subscriberService;
+
+    @Operation(summary = "Register a new subscriber")
     @ApiResponse(responseCode = "201", description = "Subscriber created successfully")
-    @ApiResponse(responseCode = "400", description = "Invalid email format")
     @PostMapping
-    public ResponseEntity<Subscriber> createSubscriber(@RequestBody Subscriber subscriber) {
-        // ... service call ...
-        return new ResponseEntity<>(subscriber, HttpStatus.CREATED);
+    public ResponseEntity<SubscriberResponse> create(@RequestBody @Valid CreateSubscriberRequest req) {
+        SubscriberResponse response = subscriberService.createSubscriber(req.getEmail(), req.getTopicId());
+        return ResponseEntity.created(URI.create("/api/subscribers/" + response.id())).body(response);
     }
 
-    @Operation(summary = "Unsubscribe Subscriber", description = "Sets the subscriber status to UNSUBSCRIBED and removes profile.")
-    @ApiResponse(responseCode = "204", description = "Subscriber deleted/unsubscribed")
-    @DeleteMapping("/{subscriberId}")
-    public ResponseEntity<Void> deleteSubscriber(@PathVariable Long subscriberId) {
-        // ... service call ...
+    @Operation(summary = "List all subscribers")
+    @ApiResponse(responseCode = "200", description = "Subscribers retrieved successfully")
+    @GetMapping
+    public ResponseEntity<List<SubscriberResponse>> list() {
+        List<SubscriberResponse> responses = subscriberService.getAllSubscribers();
+        return ResponseEntity.ok(responses);
+    }
+
+    @Operation(summary = "List subscribers by topic")
+    @ApiResponse(responseCode = "200", description = "Subscribers retrieved successfully")
+    @GetMapping("/topic/{topicId}")
+    public ResponseEntity<List<SubscriberResponse>> byTopic(@PathVariable UUID topicId) {
+        List<SubscriberResponse> responses = subscriberService.getSubscribersByTopic(topicId);
+        return ResponseEntity.ok(responses);
+    }
+
+    @Operation(summary = "Unsubscribe")
+    @ApiResponse(responseCode = "204", description = "Subscriber removed successfully")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        subscriberService.deleteSubscriber(id);
         return ResponseEntity.noContent().build();
     }
 }

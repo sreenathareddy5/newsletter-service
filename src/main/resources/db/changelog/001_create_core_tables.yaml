@@ -1,52 +1,154 @@
 databaseChangeLog:
   - changeSet:
-      id: 20241106-01
+      id: 20251108-01
       author: acme_user
-      comment: Create Subscriber, Topic, Content, and Subscription tables with relationships
-      changes:
-        # 1. SUBSCRIBER TABLE - Stores user email and active status
-        - createTable:
-            tableName: subscriber
-            columns:
-              - column: {name: id, type: BIGSERIAL, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
-              - column: {name: email, type: VARCHAR(255), constraints: {nullable: false, unique: true}}
-              - column: {name: is_active, type: BOOLEAN, defaultValueBoolean: true, constraints: {nullable: false}}
-              - column: {name: subscription_date, type: TIMESTAMP WITHOUT TIME ZONE, defaultValueComputed: 'NOW()'}
+      comment: Create core newsletter schema - Topic, Content, Subscriber, Subscription tables
 
-        # 2. TOPIC TABLE - Defines categories and the daily time for sending
+      changes:
+        # 1️⃣ TOPIC TABLE
         - createTable:
             tableName: topic
             columns:
-              - column: {name: id, type: BIGSERIAL, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
-              - column: {name: name, type: VARCHAR(50), constraints: {nullable: false, unique: true}}
-              - column: {name: send_time, type: VARCHAR(5), constraints: {nullable: false}} # Stores time as HH:MM (e.g., "09:00")
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
 
-        # 3. CONTENT TABLE - Stores the actual newsletter body
+        # 2️⃣ CONTENT TABLE
         - createTable:
             tableName: content
             columns:
-              - column: {name: id, type: BIGSERIAL, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
-              - column: {name: topic_id, type: BIGINT, constraints: {nullable: false, foreignKeyName: fk_content_topic_id, references: topic(id)}}
-              - column: {name: subject, type: VARCHAR(255), constraints: {nullable: false}}
-              - column: {name: body, type: TEXT, constraints: {nullable: false}}
-              - column: {name: scheduled_for_date, type: DATE, constraints: {nullable: false}}
-              - column: {name: is_sent, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: topic_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_content_topic
+                    references: topic(id)
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: body
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: scheduled_time
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: 'PENDING'
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sent_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: true
 
-        # Ensures that a topic only has one piece of content scheduled per day
+        # Prevent duplicate schedule for the same topic + time
         - addUniqueConstraint:
-            columnNames: topic_id, scheduled_for_date
             tableName: content
-            constraintName: uk_content_topic_date
+            columnNames: topic_id, scheduled_time
+            constraintName: uk_content_topic_scheduled
 
-        # 4. SUBSCRIPTION JOIN TABLE - Links Subscribers to Topics
+        # 3️⃣ SUBSCRIBER TABLE
+        - createTable:
+            tableName: subscriber
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: subscribed_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        # 4️⃣ SUBSCRIPTION TABLE
         - createTable:
             tableName: subscription
             columns:
-              - column: {name: subscriber_id, type: BIGINT, constraints: {nullable: false, foreignKeyName: fk_sub_subscriber_id, references: subscriber(id)}}
-              - column: {name: topic_id, type: BIGINT, constraints: {nullable: false, foreignKeyName: fk_sub_topic_id, references: topic(id)}}
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: subscriber_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_subscription_subscriber
+                    references: subscriber(id)
+              - column:
+                  name: topic_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_subscription_topic
+                    references: topic(id)
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: subscribed_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
 
-        # Define a composite primary key (Subscriber ID + Topic ID)
-        - addPrimaryKey:
-            columnNames: subscriber_id, topic_id
+        - addUniqueConstraint:
             tableName: subscription
-            constraintName: pk_subscription
+            columnNames: subscriber_id, topic_id
+            constraintName: uk_subscription_subscriber_topic
+

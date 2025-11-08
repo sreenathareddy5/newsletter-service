@@ -1,28 +1,38 @@
 package com.acme.newsletter.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "subscription")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@Table(uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"subscriber_id", "topic_id"})
+})
 public class Subscription {
 
-    // Composite primary key composed of the two foreign keys
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    private UUID id;
 
-    @Column(name = "subscriber_id")
-    private Long subscriberId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "subscriber_id")
+    private Subscriber subscriber;
 
-    @Column(name = "topic_id")
-    private Long topicId;
-    
-    // Note: The relationships are defined by IDs here for simplicity in repository queries,
-    // but in a fully object-oriented model, you might use @ManyToOne mapping here.
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "topic_id")
+    private Topic topic;
+
+    private boolean active = true;
+    private OffsetDateTime subscribedAt;
+
+    @PrePersist
+    public void prePersist() {
+        subscribedAt = OffsetDateTime.now();
+    }
 }

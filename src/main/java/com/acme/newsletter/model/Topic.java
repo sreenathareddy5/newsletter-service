@@ -1,28 +1,34 @@
 package com.acme.newsletter.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
+
+import java.time.OffsetDateTime;
+import java.util.*;
 
 @Entity
-@Table(name = "topic")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@RequiredArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Topic {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    private UUID id;
 
-    @NonNull
-    @Column(unique = true, nullable = false, length = 50)
-    private String name; // e.g., "Technology News"
+    @Column(nullable = false, unique = true)
+    private String name;
 
-    @NonNull
-    @Column(name = "send_time", nullable = false, length = 5)
-    // Stores the time (HH:mm) the newsletter for this topic should be sent daily
-    private String sendTime;
+    private String description;
+
+    @OneToMany(mappedBy = "topic", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Content> contents = new ArrayList<>();
+    private OffsetDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        createdAt = OffsetDateTime.now();
+    }
 }

@@ -1,113 +1,57 @@
 package com.acme.newsletter.controller;
 
-import com.acme.newsletter.model.dto.Topic;
-import com.acme.newsletter.model.dto.TopicRequest;
+import com.acme.newsletter.model.dto.CreateTopicRequest;
+import com.acme.newsletter.model.dto.TopicResponse;
+import com.acme.newsletter.service.TopicService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.HttpStatus;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/topics")
-@Tag(name = "Topic Management", description = "Admin API for managing content categories. Content is segregated on Topic basis.")
+@RequiredArgsConstructor
+@Tag(name = "Topics", description = "Manage newsletter topics")
 public class TopicController {
 
+    private final TopicService topicService;
 
-    /**
-     * POST /api/topics : Create a new topic
-     */
-    @Operation(summary = "Create a new Topic", 
-               description = "Creates a new topic based on the provided name and description.")
-    @ApiResponse(responseCode = "201", description = "Topic created successfully", 
-                 content = @Content(schema = @Schema(implementation = Topic.class)))
-    @ApiResponse(responseCode = "400", description = "Invalid input or Topic name already exists")
+    @Operation(summary = "Create a new topic", description = "Adds a new topic for newsletter categorization.")
+    @ApiResponse(responseCode = "201", description = "Topic created successfully")
     @PostMapping
-    public ResponseEntity<Topic> createTopic(@RequestBody TopicRequest request) {
-        // --- Service Logic Placeholder ---
-        Topic newTopic = new Topic(99L, request.getName(), request.getDescription());
-        // Topic created = topicService.save(newTopic);
-        
-        return new ResponseEntity<>(newTopic, HttpStatus.CREATED); 
+    public ResponseEntity<TopicResponse> create(@RequestBody @Valid CreateTopicRequest req) {
+        TopicResponse response = topicService.createTopic(req.getName(), req.getDescription());
+        // Use record accessor 'id()' instead of getId()
+        return ResponseEntity.created(URI.create("/api/topics/" + response.id())).body(response);
     }
 
-    /**
-     * GET /api/topics : Retrieve a list of all available topics
-     */
-    @Operation(summary = "Get All Topics", 
-               description = "Retrieves a list of all available content topics.")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved list of topics",
-                 content = @Content(array = @ArraySchema(schema = @Schema(implementation = Topic.class))))
+    @Operation(summary = "List all topics")
+    @ApiResponse(responseCode = "200", description = "Topics fetched successfully")
     @GetMapping
-    public ResponseEntity<List<Topic>> getAllTopics() {
-        // --- Service Logic Placeholder ---
-        List<Topic> topics = List.of(
-            new Topic(1L, "Tech News", "The latest in gadgets and AI."),
-            new Topic(2L, "World Markets", "Global stock and bond market summaries.")
-        );
-        // return ResponseEntity.ok(topicService.findAll());
-        
-        return ResponseEntity.ok(topics);
+    public ResponseEntity<List<TopicResponse>> list() {
+        List<TopicResponse> responses = topicService.getAllTopics();
+        return ResponseEntity.ok(responses);
     }
 
-    /**
-     * GET /api/topics/{topicId} : Retrieve a specific topic by its ID
-     */
-    @Operation(summary = "Get Topic by ID", 
-               description = "Retrieves a single topic using its unique ID.")
-    @ApiResponse(responseCode = "200", description = "Topic found and returned", 
-                 content = @Content(schema = @Schema(implementation = Topic.class)))
-    @ApiResponse(responseCode = "404", description = "Topic not found")
-    @GetMapping("/{topicId}")
-    public ResponseEntity<Topic> getTopicById(@PathVariable Long topicId) {
-        // --- Service Logic Placeholder ---
-        if (topicId.equals(1L)) {
-            return ResponseEntity.ok(new Topic(topicId, "Tech News", "Latest in tech."));
-        }
-        // return topicService.findById(topicId).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-        
-        return ResponseEntity.notFound().build();
+    @Operation(summary = "Get topic by ID")
+    @ApiResponse(responseCode = "200", description = "Topic fetched successfully")
+    @GetMapping("/{id}")
+    public ResponseEntity<TopicResponse> get(@PathVariable UUID id) {
+        return ResponseEntity.ok(topicService.getTopicById(id));
     }
 
-    /**
-     * PUT /api/topics/{topicId} : Update the details of an existing topic
-     */
-    @Operation(summary = "Update an existing Topic", 
-               description = "Updates the name or description of an existing topic.")
-    @ApiResponse(responseCode = "200", description = "Topic updated successfully",
-                 content = @Content(schema = @Schema(implementation = Topic.class)))
-    @ApiResponse(responseCode = "404", description = "Topic not found")
-    @PutMapping("/{topicId}")
-    public ResponseEntity<Topic> updateTopic(@PathVariable Long topicId, @RequestBody TopicRequest request) {
-        // --- Service Logic Placeholder ---
-        // Topic updated = topicService.update(topicId, request);
-        // return ResponseEntity.ok(updated);
-        if (topicId.equals(1L)) {
-            return ResponseEntity.ok(new Topic(topicId, request.getName(), request.getDescription()));
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    /**
-     * DELETE /api/topics/{topicId} : Delete a topic
-     */
-    @Operation(summary = "Delete a Topic", 
-               description = "Permanently deletes a topic by ID. Requires administrative privileges.")
-    @ApiResponse(responseCode = "204", description = "Topic successfully deleted")
-    @ApiResponse(responseCode = "404", description = "Topic not found")
-    @DeleteMapping("/{topicId}")
-    public ResponseEntity<Void> deleteTopic(@PathVariable Long topicId) {
-        // --- Service Logic Placeholder ---
-        // topicService.delete(topicId);
-        // return ResponseEntity.noContent().build();
-        
+    @Operation(summary = "Delete a topic by ID")
+    @ApiResponse(responseCode = "204", description = "Topic deleted successfully")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        topicService.deleteTopic(id);
         return ResponseEntity.noContent().build();
     }
 }

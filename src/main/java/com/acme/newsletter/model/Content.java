@@ -1,42 +1,41 @@
 package com.acme.newsletter.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-
-import java.time.LocalDate;
+import lombok.*;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "content")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@RequiredArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Content {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    private UUID id;
 
-    // Use eager fetch to ensure Topic details are available in the scheduler
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "topic_id", nullable = false)
-    @NonNull
-    private Topic topic; // Links content to a specific topic
+    private Topic topic;
 
-    @NonNull
     @Column(nullable = false)
-    private String subject;
+    private String title;
 
-    @NonNull
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String body;
 
-    @NonNull
-    @Column(name = "scheduled_for_date", nullable = false)
-    private LocalDate scheduledForDate; // The date this newsletter is meant to be sent
+    @Column(nullable = false)
+    private OffsetDateTime scheduledTime;
 
-    @Column(name = "is_sent", nullable = false)
-    private Boolean isSent = false;
+    @Enumerated(EnumType.STRING)
+    private Status status = Status.PENDING;
+
+    private OffsetDateTime sentAt;
+
+    public enum Status {
+        PENDING, SENT, FAILED
+    }
 }

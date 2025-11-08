@@ -1,14 +1,19 @@
 package com.acme.newsletter.repository;
 
 import com.acme.newsletter.model.Subscriber;
+import com.acme.newsletter.model.Topic;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-@Repository
-public interface SubscriberRepository extends JpaRepository<Subscriber, Long> {
+
+public interface SubscriberRepository extends JpaRepository<Subscriber, UUID> {
+    /**
+     * Finds a subscriber by email address, if it exists.
+     *
+     * @param email subscriber email
+     * @return optional subscriber
+     */
     Optional<Subscriber> findByEmail(String email);
-    
-    boolean existsByEmail(String email);
 }

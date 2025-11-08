@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20251108-03
+      author: acme_user
+      comment: Drop existing tables before recreating
+      changes:
+        - dropTable:
+            tableName: subscription
+            cascadeConstraints: true
+        - dropTable:
+            tableName: content
+            cascadeConstraints: true
+        - dropTable:
+            tableName: subscriber
+            cascadeConstraints: true
+        - dropTable:
+            tableName: topic
+            cascadeConstraints: true

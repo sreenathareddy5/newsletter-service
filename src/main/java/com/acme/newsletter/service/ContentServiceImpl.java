@@ -1,50 +1,68 @@
-package com.acme.newsletter.service;
+package com.acme.newsletter.service.impl;
 
 import com.acme.newsletter.model.Content;
 import com.acme.newsletter.model.Topic;
-import com.acme.newsletter.model.dto.ContentCreationRequest;
+import com.acme.newsletter.model.dto.ContentResponse;
 import com.acme.newsletter.repository.ContentRepository;
 import com.acme.newsletter.repository.TopicRepository;
+import com.acme.newsletter.service.ContentService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ContentServiceImpl implements ContentService {
-    
+
     private final ContentRepository contentRepository;
     private final TopicRepository topicRepository;
 
     @Override
-    public Content createContent(ContentCreationRequest request) {
-        // 1. Validate Topic existence
-        Topic topic = topicRepository.findById(request.getTopicId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Topic ID not found."));
+    public ContentResponse createContent(UUID topicId, String title, String body, OffsetDateTime scheduledTime) {
+        Topic topic = topicRepository.findById(topicId)
+                .orElseThrow(() -> new RuntimeException("Topic not found"));
 
-        // 2. Prevent scheduling content on a date where content for that topic already exists
-        // (The unique constraint on topic_id and scheduled_for_date in the DB will also enforce this)
-        if (contentRepository.findAll().stream()
-                .anyMatch(c -> c.getTopic().getId().equals(topic.getId()) && c.getScheduledForDate().equals(request.getScheduledForDate()))) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Content for Topic ID " + topic.getId() + " is already scheduled for " + request.getScheduledForDate());
+        boolean exists = contentRepository.existsByTopicAndScheduledTime(topic, scheduledTime);
+        if (exists) {
+            throw new IllegalStateException("Content already scheduled for this topic and time");
         }
 
-        // 3. Create and save the new content entity
-        Content newContent = new Content(
-                topic,
-                request.getSubject(),
-                request.getBody(),
-                request.getScheduledForDate()
-        );
+        Content content = Content.builder()
+                .topic(topic)
+                .title(title)
+                .body(body)
+                .scheduledTime(scheduledTime)
+                .status(Content.Status.PENDING)
+                .build();
 
-        return contentRepository.save(newContent);
+        Content savedContent = contentRepository.save(content);
+        return ContentResponse.fromEntity(savedContent);
     }
-    
-    // Interface definition for ContentService
-    public interface ContentService {
-        Content createContent(ContentCreationRequest request);
+
+    @Override
+    public List<ContentResponse> getAllContent() {
+        return contentRepository.findAll()
+                .stream()
+                .map(ContentResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteContent(UUID id) {
+        if (!contentRepository.existsById(id)) {
+            throw new RuntimeException("Content not found");
+        }
+        contentRepository.deleteById(id);
+    }
+
+    @Override
+    public Optional<ContentResponse> getContentById(UUID id) {
+        return contentRepository.findById(id)
+                .map(ContentResponse::fromEntity);
     }
 }
