@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20241106-02
+      author: data_loader
+      comment: Insert initial topics and their scheduled send times
+      changes:
+        - insert:
+            tableName: topic
+            columns:
+              - column: {name: name, value: "Technology News"}
+              - column: {name: send_time, value: "09:00"}
+        - insert:
+            tableName: topic
+            columns:
+              - column: {name: name, value: "Finance & Markets"}
+              - column: {name: send_time, value: "15:30"}
+        - insert:
+            tableName: topic
+            columns:
+              - column: {name: name, value: "Career Advice"}
+              - column: {name: send_time, value: "11:00"}
