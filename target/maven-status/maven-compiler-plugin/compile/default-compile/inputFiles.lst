@@ -1,9 +1,0 @@
-/Users/sreenathareddy/newstellet/newsletter-service/src/main/java/com/acme/newsletter/model/Subscriber.java
-/Users/sreenathareddy/newstellet/newsletter-service/src/main/java/com/acme/newsletter/repository/SubscriberRepository.java
-/Users/sreenathareddy/newstellet/newsletter-service/src/main/java/com/acme/newsletter/model/Content.java
-/Users/sreenathareddy/newstellet/newsletter-service/src/main/java/com/acme/newsletter/model/Topic.java
-/Users/sreenathareddy/newstellet/newsletter-service/src/main/java/com/acme/newsletter/repository/ContentRepository.java
-/Users/sreenathareddy/newstellet/newsletter-service/src/main/java/com/acme/newsletter/config/MailConfig.java
-/Users/sreenathareddy/newstellet/newsletter-service/src/main/java/com/acme/newsletter/NewsletterApplication.java
-/Users/sreenathareddy/newstellet/newsletter-service/src/main/java/com/acme/newsletter/service/NewsletterSchedulerService.java
-/Users/sreenathareddy/newstellet/newsletter-service/src/main/java/com/acme/newsletter/service/EmailService.java
