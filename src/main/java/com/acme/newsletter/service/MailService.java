@@ -31,7 +31,7 @@ public class MailService {
             message.setTo(to);
             message.setSubject(subject);
             message.setText(body);
-            message.setFrom("no-reply@newsletter-service.com"); // Optional: customize sender name
+            message.setFrom("newslettertest0101@gmail.com"); // Optional: customize sender name
 
             mailSender.send(message);
             log.info("Email sent successfully to {}", to);

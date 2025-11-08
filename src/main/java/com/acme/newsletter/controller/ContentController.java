@@ -47,18 +47,27 @@ public class ContentController {
 
     @Operation(summary = "Get content by ID", description = "Fetches details of a specific content item by ID.")
     @ApiResponse(responseCode = "200", description = "Content retrieved successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid UUID format")
     @GetMapping("/{id}")
-    public ResponseEntity<ContentResponse> get(@PathVariable UUID id) {
-        return contentService.getContentById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<ContentResponse> get(@PathVariable String id) {
+        try {
+            UUID contentId = UUID.fromString(id); // Parse String to UUID
+            return contentService.getContentById(contentId)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException e) {
+            // UUID is invalid
+            return ResponseEntity.badRequest().build();
+        }
     }
+
 
     @Operation(summary = "Delete content by ID", description = "Removes content from schedule or history.")
     @ApiResponse(responseCode = "204", description = "Content deleted successfully")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        contentService.deleteContent(id);
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        UUID contentId = UUID.fromString(id); // Parse String to UUID
+        contentService.deleteContent(contentId);
         return ResponseEntity.noContent().build();
     }
 }
